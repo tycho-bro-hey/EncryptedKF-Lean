@@ -16,6 +16,9 @@ verified by the Lean kernel on every build.
 | **Prop. 2 (Grid-Aligned Quantization)** — core invariance `F̃ e₁ = e₁` | [`EncryptedKF/GridAlignedQuantization.lean`](EncryptedKF/GridAlignedQuantization.lean) | `gridAligned_invariance` |
 | **Prop. 2** — quantization preserves the marginal column | [`EncryptedKF/GridAlignedQuantization.lean`](EncryptedKF/GridAlignedQuantization.lean) | `gridAligned_quantized_invariance` |
 | **Prop. 2** — zero marginal leakage (`L = 0`) | [`EncryptedKF/GridAlignedQuantization.lean`](EncryptedKF/GridAlignedQuantization.lean) | `gridAligned_leakage_zero` |
+| **Theorem 1** — error recursion closed form | [`EncryptedKF/DeterministicBound.lean`](EncryptedKF/DeterministicBound.lean) | `error_closed_form` |
+| **Theorem 1** — deterministic `O(k)` bound | [`EncryptedKF/DeterministicBound.lean`](EncryptedKF/DeterministicBound.lean) | `deterministic_bounded_error` |
+| **Theorem 1** — Schur-stable bounded tube | [`EncryptedKF/DeterministicBound.lean`](EncryptedKF/DeterministicBound.lean) | `deterministic_bounded_error_schur` |
 
 ### Lemma 1 — Unobservable Invariance
 
@@ -64,6 +67,35 @@ machine-checked parts (over an arbitrary commutative ring `R`):
 
 All proofs are axiom-clean: `#print axioms` reports only `propext`,
 `Classical.choice`, and `Quot.sound` (no `sorry`).
+
+### Theorem 1 — Deterministic Bounded Error
+
+The implementation-induced error obeys `e[k] = F_q e[k-1] + ε[k]`, where `ε[k]`
+is the per-cycle re-encoding disturbance. The paper bounds the error over an
+indefinite horizon. The key step is the closed form
+
+```
+e[k] = F_q^k e[0] + Σ_{j=1}^k F_q^{k-j} ε[j],
+```
+
+in which *every* matrix power is bounded by `κ := sup_m ‖F_q^m‖` — a naive
+induction on the recursion would instead accumulate a `κ^k` factor. The results
+are formalized for an arbitrary continuous linear operator `T` on a normed
+space, which generalizes the paper's quantized matrix `F_q` acting by `mulVec`
+(continuous, as the state space is finite dimensional).
+
+- **`error_closed_form`** — `e k = Tᵏ (e 0) + Σ_{i<k} Tⁱ (ε (k-i))`, by induction
+  on the recursion.
+- **`deterministic_bounded_error`** — if `‖Tᵐ‖ ≤ κ` for all `m` and `‖ε j‖ ≤ ε̄`,
+  then `‖e k‖ ≤ κ ‖e 0‖ + k κ ε̄`: the error grows at most linearly in the
+  horizon, with a single factor of `κ`.
+- **`deterministic_bounded_error_schur`** — if the powers decay geometrically,
+  `‖Tᵐ‖ ≤ C ρᵐ` with `0 ≤ ρ < 1`, then `‖e k‖ ≤ C ρᵏ ‖e 0‖ + C ε̄ / (1 - ρ)`:
+  the forcing term stays in a bounded invariant error tube of size `O(ε̄)`,
+  independent of the horizon.
+
+All three are axiom-clean (`#print axioms` reports only `propext`,
+`Classical.choice`, `Quot.sound`).
 
 ## Building / verifying
 
