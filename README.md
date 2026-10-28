@@ -13,6 +13,9 @@ verified by the Lean kernel on every build.
 | Paper result | Lean file | Lean name |
 |---|---|---|
 | **Lemma 1 (Unobservable Invariance)** | [`EncryptedKF/UnobservableInvariance.lean`](EncryptedKF/UnobservableInvariance.lean) | `unobservable_invariance` |
+| **Prop. 2 (Grid-Aligned Quantization)** — core invariance `F̃ e₁ = e₁` | [`EncryptedKF/GridAlignedQuantization.lean`](EncryptedKF/GridAlignedQuantization.lean) | `gridAligned_invariance` |
+| **Prop. 2** — quantization preserves the marginal column | [`EncryptedKF/GridAlignedQuantization.lean`](EncryptedKF/GridAlignedQuantization.lean) | `gridAligned_quantized_invariance` |
+| **Prop. 2** — zero marginal leakage (`L = 0`) | [`EncryptedKF/GridAlignedQuantization.lean`](EncryptedKF/GridAlignedQuantization.lean) | `gridAligned_leakage_zero` |
 
 ### Lemma 1 — Unobservable Invariance
 
@@ -40,6 +43,27 @@ theorem unobservable_invariance
 The proof is the exact algebraic identity from the paper,
 `(I − KC)Au = Au − K(Cu) = Au = u`, discharged by rewriting with the matrix
 `mulVec` lemmas of Mathlib.
+
+### Proposition 2 — Grid-Aligned Quantization
+
+The paper aligns a known marginal eigenvector `u` (with `F u = u`) to a standard
+basis vector `e₁` via an integer, unimodular coordinate change `T` (`T u = e₁`),
+and writes `F̃ = T F T⁻¹`. The formalization splits the proposition into three
+machine-checked parts (over an arbitrary commutative ring `R`):
+
+- **`gridAligned_invariance`** — if `F u = u`, `T u = e`, and `Tinv` is a left
+  inverse of `T`, then `(T F Tinv) e = e`. Taking `e = e₁`, this is the paper's
+  `F̃ e₁ = e₁`: the marginal column of `F̃` is exactly `(1, 0, …, 0)ᵀ`.
+- **`gridAligned_quantized_invariance`** — for any quantizer `qt` with `qt 0 = 0`
+  and `qt 1 = 1`, the quantized matrix `F̃.map qt` also fixes `e₁`. The column
+  entries (`0`s and a single `1`) are exact fixed points of entrywise
+  quantization at every precision.
+- **`gridAligned_leakage_zero`** — if both `F̃` and its quantization `F̃_q` fix
+  the marginal direction `e`, then `(F̃_q − F̃) e = 0`. The marginal direction
+  leaks nowhere, so the leakage term is exactly `0` rather than `O(δ)`.
+
+All proofs are axiom-clean: `#print axioms` reports only `propext`,
+`Classical.choice`, and `Quot.sound` (no `sorry`).
 
 ## Building / verifying
 
